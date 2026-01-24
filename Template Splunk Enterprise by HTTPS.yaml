@@ -1,0 +1,1240 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: d141c067ae2a49ccb5a1565354fb07e7
+      template: 'Template Splunk Enterprise by HTTPS'
+      name: 'Template Splunk Enterprise by HTTPS'
+      description: |
+        Template Splunk Enterprise by HTTPS using REST Api
+        
+        @author: Guille Rodriguez Gonzalez 
+        @github: https://github.com/guillerg86/
+        @linkedin: www.linkedin.com/in/guille-rodriguez-gonzalez
+        
+        Splunk REST API Doc: https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introduction/endpoints-reference-list
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 22fab2ffd7aa492e95ea9b8b1c19fef9
+          name: 'Splunk ES License Quota Peers Used'
+          type: HTTP_AGENT
+          key: splunk.enterprise.licenser.usage.license_usage.peers_usage_bytes
+          delay: 5m
+          units: B
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content.peers_usage_bytes'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/licenser/usage/license_usage'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise License'
+          triggers:
+            - uuid: 9e8d1949cbb3416595fa7c6d268f82e7
+              expression: 'nodata(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.peers_usage_bytes,30m)=1'
+              name: 'Splunk API License: No data for more than 30min'
+              url_name: 'Splunk API Licenser'
+              url: 'https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/license-endpoints/license-endpoint-descriptions#id_2bf8cc9a_35f5_4e58_878e_5db7c34a89dc--en__licenser.2Flicenses'
+              priority: HIGH
+        - uuid: 2287522f611f4ddd8d866df4c12a06bc
+          name: 'Splunk ES License Quota Total'
+          type: HTTP_AGENT
+          key: splunk.enterprise.licenser.usage.license_usage.quota
+          delay: 1d
+          units: B
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content.quota'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/licenser/usage/license_usage'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise License'
+        - uuid: 4d7a4122883a42c08a2b5ca431e73f19
+          name: 'Splunk ES License Quota Used in perc'
+          type: CALCULATED
+          key: splunk.enterprise.licenser.usage.license_usage.quota_used_perc
+          delay: 10m
+          value_type: FLOAT
+          units: '%'
+          params: '100*(last(//splunk.enterprise.licenser.usage.license_usage.peers_usage_bytes) / last(//splunk.enterprise.licenser.usage.license_usage.quota))'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'return Number(value).toFixed(1);'
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise License'
+          triggers:
+            - uuid: 6f9b49ca588548709ee53e452ec05ca4
+              expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>=100'
+              name: 'Splunk License quota usage is 100%'
+              priority: DISASTER
+              dependencies:
+                - name: 'Splunk API License: No data for more than 30min'
+                  expression: 'nodata(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.peers_usage_bytes,30m)=1'
+            - uuid: 0185122491ff4713b8be8d14b4663cc0
+              expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>80'
+              name: 'Splunk License quota usage is over 80%'
+              opdata: '{ITEM.LASTVALUE}%'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk License quota usage is over 90%'
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>90'
+            - uuid: e60e7d846e6b4e858693102f02ec0097
+              expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>90'
+              name: 'Splunk License quota usage is over 90%'
+              opdata: '{ITEM.LASTVALUE}%'
+              priority: AVERAGE
+              dependencies:
+                - name: 'Splunk License quota usage is over 95%'
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>95'
+            - uuid: e32e51dc66c94fb9addced6994cc2372
+              expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>95'
+              name: 'Splunk License quota usage is over 95%'
+              opdata: '{ITEM.LASTVALUE}%'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk License quota usage is 100%'
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.licenser.usage.license_usage.quota_used_perc)>=100'
+        - uuid: cf9a15f3e3864b058c3e24c420d37f90
+          name: 'Splunk ES License Quota Slaves Used'
+          type: HTTP_AGENT
+          key: splunk.enterprise.licenser.usage.license_usage.slaves_usage_bytes
+          delay: 5m
+          units: B
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content.slaves_usage_bytes'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/licenser/usage/license_usage'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise License'
+        - uuid: 8b17b508b9174cb4a683bd37584aeb9d
+          name: 'Splunk ES Splunkd Overall Health'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.health
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: 9e6d0498296d41878c4e0fdebe7af644
+          name: 'Splunk ES Splunkd Health File Monitor Input'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.File_Monitor_Input
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check File Monitor Input
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["File Monitor Input"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: e701dbc4f3a04b4b90e5d6c4b17b1368
+          name: 'Splunk ES Splunkd Health Http Event Collector'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.HEC
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check HEC Health 
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["HEC Health"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: c4891e09449c4e96876b9dde3bea4af8
+          name: 'Splunk ES Splunkd Health Index Processor'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.IdxProc
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check Index Processor
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["Index Processor"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: d412887f1e6d4c2b8c311e9d7a98674a
+          name: 'Splunk ES Splunkd Health Resource Usage'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.Resource_Usage
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check Resource Usage
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["Resource Usage"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: 6668a44c74b94beab04c955a55c6c9d6
+          name: 'Splunk ES Splunkd Health Search Scheduler'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.Search_Scheduler
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check Search Scheduler
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["Search Scheduler"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: 5bb23703eafa455ab7e8ff35d1631005
+          name: 'Splunk ES Splunkd Health Workload Management'
+          type: DEPENDENT
+          key: splunk.enterprise.server.health.splunkd.details.health.Workload_Management
+          history: 30d
+          value_type: CHAR
+          description: |
+            Check Workload Management
+            
+            https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.features["Workload Management"].health'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.health.splunkd.details.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+        - uuid: 7ee2f2a8b0a14864955a6574755eaa98
+          name: 'Splunk ES Splunkd Health Raw'
+          type: HTTP_AGENT
+          key: splunk.enterprise.server.health.splunkd.details.raw
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/server/health/splunkd/details'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Health'
+            - tag: Application
+              value: 'Zabbix raw items'
+          triggers:
+            - uuid: 3edb9678bd4e47ce92fe24d76d2699c6
+              expression: 'nodata(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.raw,30m)=1'
+              name: 'Splunk API Server Health: No data for more than 30min'
+              url_name: 'Splunk API Server Health'
+              url: 'https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions'
+              priority: HIGH
+        - uuid: f2052123f88d4e8fb4f849a49461dd72
+          name: 'Splunk ES CPU Architecture'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.cpu_arch
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.cpu_arch
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: 8659c11ab28945498d58949acecc08ad
+          name: 'Splunk ES Forwarding'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.isForwarding
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.isForwarding
+            - type: BOOL_TO_DECIMAL
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: 80984a6131f8479e861a82d16cf141f0
+          name: 'Splunk ES License State'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.licenseState
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.licenseState
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: 625db39a1a424cb59416c7a52ee45950
+          name: 'Splunk ES Server Info Raw'
+          type: HTTP_AGENT
+          key: splunk.enterprise.server.info.raw
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/server/info'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+            - tag: Application
+              value: 'Zabbix raw items'
+          triggers:
+            - uuid: 36d7a9b60bc34de2a087efcb91962cf3
+              expression: 'nodata(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.info.raw,30m)=1'
+              name: 'Splunk API Server Info: No data for more than 30min'
+              url_name: 'Splunk API Server Info'
+              url: 'https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+              priority: HIGH
+        - uuid: 734336e4b0cd4fc2a2fc09554738381a
+          name: 'Splunk ES Version'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.version
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.version
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: 2d3edaa03b964b929f794d522b5e3af7
+          name: 'Splunk ES Version Build'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.version_build
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.build
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: 56502155650b4e40beb7530fbb39ddbc
+          name: 'Splunk ES Version (float)'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.version_float
+          history: 30d
+          value_type: FLOAT
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.version
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = value.split(".")
+                  var version = data.shift()+"."+data.join('')
+                  return version
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+        - uuid: a82e50431d284335b43ad17d25aeb356
+          name: 'Splunk ES Server Data Federation Disabled'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.dataFederationDisabled
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.dataFederationDisabled
+            - type: BOOL_TO_DECIMAL
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 0f48857b9f6b4f8ea6f26e17a48e4a3e
+          name: 'Splunk ES Server Splunk Web SSL Enabled'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.enableSplunkWebSSL
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.enableSplunkWebSSL
+            - type: BOOL_TO_DECIMAL
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: ebb70b3856bb4ff2943fcd19aa106749
+          name: 'Splunk ES HTTP Port'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.httpport
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.httpport
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: dc416a9def8446c7aea81c981b6f9764
+          name: 'Splunk ES Server Invalidate Session Tokens on Logout'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.invalidateSessionTokensOnLogout
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.invalidateSessionTokensOnLogout
+            - type: BOOL_TO_DECIMAL
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 490688f48c1946e1869b1234c7e739c7
+          name: 'Splunk ES Server kvStore Disabled'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.kvStoreDisabled
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.kvStoreDisabled
+            - type: BOOL_TO_DECIMAL
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 9b1ffbd995594e589e32a53dbb07c745
+          name: 'Splunk ES kvStore Port'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.kvStorePort
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.kvStorePort
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 2cc8ff95e6624380bd642e3dff246e80
+          name: 'Splunk ES Management Host Port'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.mgmtHostPort
+          history: 30d
+          trends: '0'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          valuemap:
+            name: True-False
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.mgmtHostPort
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 749b81a708564da3bee553969eb3a54d
+          name: 'Splunk ES Server Settings Raw'
+          type: HTTP_AGENT
+          key: splunk.enterprise.server.settings.raw
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.entry[0].content'
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  
+                  var obj = data;
+                  if (obj && typeof obj === 'object') {
+                  	// Eliminar claves si existen
+                      if (obj.hasOwnProperty('pass4SymmKey')) {
+                      	delete obj.pass4SymmKey;
+                      }
+                  }
+                  return JSON.stringify(data);
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/server/settings'
+          query_fields:
+            - name: output_mode
+              value: json
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+            - tag: Application
+              value: 'Zabbix raw items'
+          triggers:
+            - uuid: 166b245fd9924ab086d41eea916f95a5
+              expression: 'nodata(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.settings.raw,30m)=1'
+              name: 'Splunk API Server Settings: No data for more than 30min'
+              url_name: 'Splunk API Server Settings'
+              url: 'https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+              priority: HIGH
+        - uuid: 991ef5f7d2b3423c9c2533645c8ce6d8
+          name: 'Splunk ES Path SPLUNK_DB'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.SPLUNK_DB
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.SPLUNK_DB
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+        - uuid: 1a5f976eecf94779916844f86abba075
+          name: 'Splunk ES Path SPLUNK_HOME'
+          type: DEPENDENT
+          key: splunk.enterprise.server.settings.SPLUNK_HOME
+          history: 30d
+          value_type: CHAR
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/system-endpoints/system-endpoint-descriptions#id_9dc6a6f3_1223_4950_8e19_2ab8ca66ca88--en__server.2Fsettings'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.SPLUNK_HOME
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: splunk.enterprise.server.settings.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Settings'
+      discovery_rules:
+        - uuid: 31a68cb8cd2a497d9ae92721b58754ce
+          name: 'Discovery Licenses'
+          type: HTTP_AGENT
+          key: splunk.enterprise.licenses.discovery
+          delay: 1h
+          authtype: BASIC
+          username: '{$SPLUNK.ENTERPRISE.API.USER}'
+          password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          filter:
+            conditions:
+              - macro: '{#SPL.ENTERPRISE.LIC.NAME}'
+                value: '{$SPL.ENTERPRISE.LIC.NOTMATCHES}'
+                operator: NOT_MATCHES_REGEX
+          enabled_lifetime_type: DISABLE_AFTER
+          enabled_lifetime: 6h
+          item_prototypes:
+            - uuid: 709ffdf3a61446fcb3b420de4d807f34
+              name: 'Splunk ES Creation Time License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.creation_time[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              units: unixtime
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.creation_time'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+                - tag: 'Splunk Enterprise'
+                  value: 'Splunk Enterprise License'
+            - uuid: 4fb7203b5ed543b4997e74e5cf79e0e8
+              name: 'Splunk ES Days left to expiration License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: CALCULATED
+              key: 'splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1h
+              value_type: FLOAT
+              params: '(last( //splunk.enterprise.license.expiration_time[{#SPL.ENTERPRISE.LIC.NAME}]) - now() ) / 86400'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return Number(value).toFixed(1);'
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+              trigger_prototypes:
+                - uuid: 14eb0b9786fb43cb898a68918138eebf
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < 0'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} is expired!'
+                  priority: DISASTER
+                  description: 'License is expired'
+                - uuid: b74ce214765d4147b53b770e298490d7
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG}'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d left'
+                  priority: AVERAGE
+                  description: 'License will expire in less than {$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG} day/days'
+                  dependencies:
+                    - name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                      expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_HIGH}'
+                - uuid: 2092606f5271464098db5e9def3858b1
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_CRITICAL}'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d left'
+                  priority: DISASTER
+                  description: 'License will expire in less than {$SPLUNK.ENTERPRISE.LICEXP.DAYS_CRITICAL} day/days'
+                  dependencies:
+                    - name: 'License {#SPL.ENTERPRISE.LIC.NAME} is expired!'
+                      expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < 0'
+                - uuid: 28fe35d59c3f40298a5f862d3509bca7
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_HIGH}'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d left'
+                  priority: HIGH
+                  description: 'License will expire in less than {$SPLUNK.ENTERPRISE.LICEXP.DAYS_HIGH} day/days'
+                  dependencies:
+                    - name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                      expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_CRITICAL}'
+                - uuid: ba6e44690e604dc2befa5776a0647d5b
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_INFO}'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d left'
+                  priority: INFO
+                  description: 'License will expire in less than {$SPLUNK.ENTERPRISE.LICEXP.DAYS_INFO} day/days'
+                  dependencies:
+                    - name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                      expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_WARN}'
+                - uuid: f76815a0c1914488af8ac9a7632d0997
+                  expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_WARN}'
+                  name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                  opdata: '{ITEM.LASTVALUE}d left'
+                  priority: WARNING
+                  description: 'License will expire in less than {$SPLUNK.ENTERPRISE.LICEXP.DAYS_WARN} day/days'
+                  dependencies:
+                    - name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
+                      expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG}'
+            - uuid: ba26fd58717d4d16b8b2fc964c604112
+              name: 'Splunk ES Expiration Time License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.expiration_time[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              units: unixtime
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.expiration_time'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 26936956bfa54ac9a2e62ab17d8d2085
+              name: 'Splunk ES ID Group License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.group_id[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.group_id'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: cfb21a0a97d5467ba3cf4438c6a63559
+              name: 'Splunk ES Is Unlimited License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.is_unlimited[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              valuemap:
+                name: True-False
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.is_unlimited'
+                - type: BOOL_TO_DECIMAL
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 236f9fd83627410a87cb0f94501f5159
+              name: 'Splunk ES Label License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.label[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.label'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 28b50114304246a0b284d6370db1f348
+              name: 'Splunk ES Max Retention Size License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.max_retention_size[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.max_retention_size'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 421824696c364cb2af9a6c21dac10965
+              name: 'Splunk ES Max Users License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.max_users[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.max_users'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 4f0beb549cb34834bca5452f1b124a27
+              name: 'Splunk ES Max Violations License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.max_violations[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.max_violations'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 020837e201c14bd6826420fd4a7afa8e
+              name: 'Splunk ES Notes License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.notes[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.notes'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 317f088b3e714ed4bff0ce769b028823
+              name: 'Splunk ES Quota License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.quota[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              units: B
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.quota'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 8d20a0d129374895975646705ac0031a
+              name: 'Splunk ES Relative Expiration Start License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.relative_expiration_start[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.relative_expiration_start'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 8c04352aaeb64d1283fd7bdf40a61ade
+              name: 'Splunk ES Status License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.status[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1h
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.status'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: bfc1adef3387445c8701608b11576892
+              name: 'Splunk ES ID Subgroup License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.subgroup_id[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.subgroup_id'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 5d70b92901c14ee38957b48ea94e6509
+              name: 'SPL Type License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.type[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              value_type: CHAR
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.type'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+            - uuid: 3a482981de704cc59db7149428063e7f
+              name: 'Splunk ES Window Period Time License: {#SPL.ENTERPRISE.LIC.NAME}'
+              type: HTTP_AGENT
+              key: 'splunk.enterprise.license.window_period[{#SPL.ENTERPRISE.LIC.NAME}]'
+              delay: 1d
+              authtype: BASIC
+              username: '{$SPLUNK.ENTERPRISE.API.USER}'
+              password: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.entry[0].content.window_period'
+              url: 'https://{HOST.CONN}:8089/services/licenser/licenses/{#SPL.ENTERPRISE.LIC.NAME}'
+              query_fields:
+                - name: output_mode
+                  value: json
+              tags:
+                - tag: Application
+                  value: 'Splunk Enterprise'
+                - tag: Application
+                  value: 'Splunk Enterprise License'
+                - tag: Application
+                  value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
+          url: '{$SPLUNK.ENTERPRISE.API.BASEURL}/services/licenser/licenses'
+          query_fields:
+            - name: output_mode
+              value: json
+          lld_macro_paths:
+            - lld_macro: '{#SPL.ENTERPRISE.LIC.NAME}'
+              path: $.name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.entry
+      macros:
+        - macro: '{$SPL.ENTERPRISE.LIC.NOTMATCHES}'
+          value: '^F+D*$'
+          description: 'Splunks comes with 2 licenses with only F on hash... so this macro forces ignore this kind of license.'
+        - macro: '{$SPLUNK.ENTERPRISE.API.BASEURL}'
+          description: 'Splunk FQDN URL (example: https://misplunk.com:8089)'
+        - macro: '{$SPLUNK.ENTERPRISE.API.PASSWORD}'
+          description: 'Password of Splunk API'
+        - macro: '{$SPLUNK.ENTERPRISE.API.USER}'
+          description: 'Username of Splunk API'
+        - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG}'
+          value: '15'
+        - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_CRITICAL}'
+          value: '1'
+        - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_HIGH}'
+          value: '5'
+        - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_INFO}'
+          value: '60'
+        - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_WARN}'
+          value: '30'
+      valuemaps:
+        - uuid: a672078c896f46f794bd07b56cb758c8
+          name: True-False
+          mappings:
+            - value: '0'
+              newvalue: 'False'
+            - value: '1'
+              newvalue: 'True'
