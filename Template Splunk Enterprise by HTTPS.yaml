@@ -342,17 +342,16 @@ zabbix_export:
           type: DEPENDENT
           key: splunk.enterprise.server.info.cpu_arch
           history: 30d
-          trends: '0'
+          value_type: CHAR
           description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
-          valuemap:
-            name: True-False
+          inventory_link: HW_ARCH
           preprocessing:
             - type: JSONPATH
               parameters:
                 - $.cpu_arch
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
-                - 1d
+                - 8h
           master_item:
             key: splunk.enterprise.server.info.raw
           tags:
@@ -479,31 +478,6 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Server Info'
-        - uuid: 56502155650b4e40beb7530fbb39ddbc
-          name: 'Splunk ES Version (float)'
-          type: DEPENDENT
-          key: splunk.enterprise.server.info.version_float
-          history: 30d
-          value_type: FLOAT
-          trends: '0'
-          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
-          preprocessing:
-            - type: JSONPATH
-              parameters:
-                - $.version
-            - type: JAVASCRIPT
-              parameters:
-                - |
-                  var data = value.split(".")
-                  var version = data.shift()+"."+data.join('')
-                  return version
-          master_item:
-            key: splunk.enterprise.server.info.raw
-          tags:
-            - tag: Application
-              value: 'Splunk Enterprise'
-            - tag: Application
-              value: 'Splunk Enterprise Server Info'
         - uuid: a82e50431d284335b43ad17d25aeb356
           name: 'Splunk ES Server Data Federation Disabled'
           type: DEPENDENT
@@ -600,7 +574,7 @@ zabbix_export:
             - tag: Application
               value: 'Splunk Enterprise Server Settings'
         - uuid: 490688f48c1946e1869b1234c7e739c7
-          name: 'Splunk ES Server kvStore Disabled'
+          name: 'Splunk ES Server KVStore Disabled'
           type: DEPENDENT
           key: splunk.enterprise.server.settings.kvStoreDisabled
           history: 30d
@@ -624,7 +598,7 @@ zabbix_export:
             - tag: Application
               value: 'Splunk Enterprise Server Settings'
         - uuid: 9b1ffbd995594e589e32a53dbb07c745
-          name: 'Splunk ES kvStore Port'
+          name: 'Splunk ES KVStore Port'
           type: DEPENDENT
           key: splunk.enterprise.server.settings.kvStorePort
           history: 30d
@@ -727,7 +701,7 @@ zabbix_export:
                 - $.SPLUNK_DB
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
-                - 1h
+                - 8h
           master_item:
             key: splunk.enterprise.server.settings.raw
           tags:
@@ -748,7 +722,7 @@ zabbix_export:
                 - $.SPLUNK_HOME
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
-                - 1h
+                - 8h
           master_item:
             key: splunk.enterprise.server.settings.raw
           tags:
@@ -820,7 +794,7 @@ zabbix_export:
                   expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < 0'
                   name: 'License {#SPL.ENTERPRISE.LIC.NAME} is expired!'
                   priority: DISASTER
-                  description: 'License is expired'
+                  description: 'License has expired. Add a new license if no other valid license is available and remove this license from Splunk > Settings > Licesing section'
                 - uuid: b74ce214765d4147b53b770e298490d7
                   expression: 'last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.license.daystoexpire[{#SPL.ENTERPRISE.LIC.NAME}]) < {$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG}'
                   name: 'License {#SPL.ENTERPRISE.LIC.NAME} will expire soon'
@@ -1153,7 +1127,7 @@ zabbix_export:
                 - tag: Application
                   value: 'Splunk Enterprise License {#SPL.ENTERPRISE.LIC.NAME}'
             - uuid: 5d70b92901c14ee38957b48ea94e6509
-              name: 'SPL Type License: {#SPL.ENTERPRISE.LIC.NAME}'
+              name: 'Splunk ES Type License: {#SPL.ENTERPRISE.LIC.NAME}'
               type: HTTP_AGENT
               key: 'splunk.enterprise.license.type[{#SPL.ENTERPRISE.LIC.NAME}]'
               delay: 1d
@@ -1230,6 +1204,535 @@ zabbix_export:
           value: '60'
         - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_WARN}'
           value: '30'
+      dashboards:
+        - uuid: 957fa27ae79d4bdb8ad1069038b6af49
+          name: 'Splunk Enterprise'
+          pages:
+            - widgets:
+                - type: item
+                  name: 'Splunk Version'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.info.version
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '65'
+                - type: item
+                  name: 'Splunk Build'
+                  'y': '2'
+                  width: '19'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.info.version_build
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: topitems
+                  name: 'Splunkd Health'
+                  'y': '4'
+                  width: '19'
+                  height: '4'
+                  fields:
+                    - type: INTEGER
+                      name: columns.0.display_value_as
+                      value: '2'
+                    - type: STRING
+                      name: columns.0.highlights.0.color
+                      value: 0EC9AC
+                    - type: STRING
+                      name: columns.0.highlights.0.pattern
+                      value: green
+                    - type: STRING
+                      name: columns.0.highlights.1.color
+                      value: FF465C
+                    - type: STRING
+                      name: columns.0.highlights.1.pattern
+                      value: red
+                    - type: STRING
+                      name: columns.0.highlights.2.color
+                      value: FFD54F
+                    - type: STRING
+                      name: columns.0.highlights.2.pattern
+                      value: yellow
+                    - type: STRING
+                      name: columns.0.items.0
+                      value: 'Splunk ES Splunkd Health *'
+                    - type: INTEGER
+                      name: columns.0.item_tags.0.operator
+                      value: '2'
+                    - type: STRING
+                      name: columns.0.item_tags.0.tag
+                      value: Application
+                    - type: STRING
+                      name: columns.0.item_tags.0.value
+                      value: 'Zabbix raw'
+                    - type: INTEGER
+                      name: item_ordering_limit
+                      value: '20'
+                    - type: INTEGER
+                      name: item_ordering_order_by
+                      value: '2'
+                    - type: INTEGER
+                      name: layout
+                      value: '1'
+                    - type: INTEGER
+                      name: problems
+                      value: '2'
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '120'
+                    - type: INTEGER
+                      name: show_column_header
+                      value: '0'
+                - type: item
+                  name: Architecture
+                  x: '9'
+                  width: '10'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.info.cpu_arch
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '65'
+                - type: item
+                  name: 'Lic. Quota Peers Used'
+                  x: '19'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.licenser.usage.license_usage.peers_usage_bytes
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
+                  name: 'Lic. Quota Total'
+                  x: '19'
+                  'y': '2'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.licenser.usage.license_usage.quota
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: problems
+                  name: Problems
+                  x: '19'
+                  'y': '4'
+                  width: '53'
+                  height: '4'
+                  fields:
+                    - type: STRING
+                      name: reference
+                      value: BXVUU
+                    - type: INTEGER
+                      name: show
+                      value: '3'
+                    - type: INTEGER
+                      name: show_opdata
+                      value: '2'
+                    - type: INTEGER
+                      name: show_timeline
+                      value: '0'
+                    - type: INTEGER
+                      name: sort_triggers
+                      value: '1'
+                - type: gauge
+                  name: 'License Quota Usage'
+                  x: '28'
+                  width: '17'
+                  height: '4'
+                  fields:
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.licenser.usage.license_usage.quota_used_perc
+                    - type: STRING
+                      name: max
+                      value: '100'
+                    - type: STRING
+                      name: min
+                      value: '0'
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: show.2
+                      value: '4'
+                    - type: INTEGER
+                      name: show.3
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 3BC97D
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: FCCB1D
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '80'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '90'
+                    - type: INTEGER
+                      name: th_show_arc
+                      value: '1'
+                    - type: INTEGER
+                      name: th_show_labels
+                      value: '1'
+                - type: item
+                  name: 'Management Port'
+                  x: '45'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.settings.mgmtHostPort
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
+                  name: 'License Status'
+                  x: '45'
+                  'y': '2'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.info.licenseState
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
+                  name: 'HTTP Port'
+                  x: '54'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.settings.httpport
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
+                  name: 'Data Federation Disabled'
+                  x: '54'
+                  'y': '2'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.settings.dataFederationDisabled
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '60'
+                - type: item
+                  name: 'KVStore Port'
+                  x: '63'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.settings.kvStorePort
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
+                  name: 'KVStore Disabled'
+                  x: '63'
+                  'y': '2'
+                  width: '9'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '0'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.settings.kvStoreDisabled
+                    - type: INTEGER
+                      name: rf_rate
+                      value: '900'
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '60'
       valuemaps:
         - uuid: a672078c896f46f794bd07b56cb758c8
           name: True-False
