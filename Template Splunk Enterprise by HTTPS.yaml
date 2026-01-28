@@ -144,16 +144,22 @@ zabbix_export:
           name: 'Splunk ES Splunkd Overall Health'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions'
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - $.health
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -161,23 +167,43 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 1a2d691e2b4f4f8789dc957941e3dfe0
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Overall Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: DISASTER
+            - uuid: 956c350fe79d42e8aeacc281ccb2ad14
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Overall Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: 9e6d0498296d41878c4e0fdebe7af644
           name: 'Splunk ES Splunkd Health File Monitor Input'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.File_Monitor_Input
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check File Monitor Input
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["File Monitor Input"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -185,23 +211,46 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 5123204169e6492eb8888649a37db2e4
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.File_Monitor_Input, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk File Monitor Input Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health degraded state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+            - uuid: 66cf4d19e9f547338b7488e8a4564a4f
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.File_Monitor_Input, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk File Monitor Input Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk File Monitor Input Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.File_Monitor_Input, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: e701dbc4f3a04b4b90e5d6c4b17b1368
           name: 'Splunk ES Splunkd Health Http Event Collector'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.HEC
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check HEC Health 
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["HEC Health"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -209,23 +258,46 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 60b4f77e591e468683efbbb53e85fd01
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.HEC, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Http Event Collector Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+            - uuid: a1bfd21e0a734e828dbb1fec10a2ecc6
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.HEC, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Http Event Collector Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Http Event Collector Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.HEC, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: c4891e09449c4e96876b9dde3bea4af8
           name: 'Splunk ES Splunkd Health Index Processor'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.IdxProc
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check Index Processor
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["Index Processor"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -233,23 +305,46 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 504afc5d3b434f998880df6bb4518282
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.IdxProc, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Index Processor Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+            - uuid: a6c7c17722194f77a11399ce4324cee3
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.IdxProc, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Index Processor Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Index Processor Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.IdxProc, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: d412887f1e6d4c2b8c311e9d7a98674a
           name: 'Splunk ES Splunkd Health Resource Usage'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.Resource_Usage
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check Resource Usage
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["Resource Usage"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -257,23 +352,46 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 1d96ff77eee44969be1d03ddbbd9fbaa
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Resource_Usage, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Resource Usage Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+            - uuid: da45b55ead78402f8bfc9d4a1a2204ba
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Resource_Usage, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Resource Usage Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Resource Usage Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Resource_Usage, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: 6668a44c74b94beab04c955a55c6c9d6
           name: 'Splunk ES Splunkd Health Search Scheduler'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.Search_Scheduler
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check Search Scheduler
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["Search Scheduler"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -281,23 +399,46 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: b63a0b10e28f4dbcb04b5131dae95e2c
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Search_Scheduler, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Search Scheduler Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+            - uuid: 17c042e0392049e1bd4fb7e30110f376
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Search_Scheduler, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Search Scheduler Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Search Scheduler Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Search_Scheduler, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: 5bb23703eafa455ab7e8ff35d1631005
           name: 'Splunk ES Splunkd Health Workload Management'
           type: DEPENDENT
           key: splunk.enterprise.server.health.splunkd.details.health.Workload_Management
-          history: 30d
-          value_type: CHAR
+          history: 7d
           description: |
             Check Workload Management
             
             https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#id_50cfdccb_0f97_431a_9518_d8cf1ebd9519--en__Introspection_endpoint_descriptions
+          valuemap:
+            name: 'Health Status'
           preprocessing:
             - type: JSONPATH
               parameters:
                 - '$.features["Workload Management"].health'
-            - type: DISCARD_UNCHANGED_HEARTBEAT
+            - type: JAVASCRIPT
               parameters:
-                - 1h
+                - |
+                  switch(value) {
+                  	case "green": return 0;
+                  	case "yellow": return 1;
+                  	case "red": return 2;
+                  }
           master_item:
             key: splunk.enterprise.server.health.splunkd.details.raw
           tags:
@@ -305,11 +446,27 @@ zabbix_export:
               value: 'Splunk Enterprise'
             - tag: Application
               value: 'Splunk Enterprise Health'
+          triggers:
+            - uuid: 3f7cecf99e8b4473891bf3a3a56722f8
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Workload_Management, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+              name: 'Splunk Workload Management Health critical state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: HIGH
+              dependencies:
+                - name: 'Splunk Overall Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
+            - uuid: 93bff805d963455a8486e53cc5c5002b
+              expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Workload_Management, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 1'
+              name: 'Splunk Workload Management Health degraded state'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+              dependencies:
+                - name: 'Splunk Workload Management Health critical state'
+                  expression: 'min(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.health.splunkd.details.health.Workload_Management, {$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}) >= 2'
         - uuid: 7ee2f2a8b0a14864955a6574755eaa98
           name: 'Splunk ES Splunkd Health Raw'
           type: HTTP_AGENT
           key: splunk.enterprise.server.health.splunkd.details.raw
-          delay: 5m
           history: '0'
           value_type: TEXT
           authtype: BASIC
@@ -1194,6 +1351,9 @@ zabbix_export:
           description: 'Password of Splunk API'
         - macro: '{$SPLUNK.ENTERPRISE.API.USER}'
           description: 'Username of Splunk API'
+        - macro: '{$SPLUNK.ENTERPRISE.HEALTH_MIN_TRIGGER}'
+          value: 5m
+          description: 'Minutes to wait for launch trigger'
         - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_AVG}'
           value: '15'
         - macro: '{$SPLUNK.ENTERPRISE.LICEXP.DAYS_CRITICAL}'
@@ -1212,6 +1372,7 @@ zabbix_export:
                 - type: item
                   name: 'Splunk Version'
                   width: '9'
+                  hide_header: 'YES'
                   fields:
                     - type: INTEGER
                       name: decimal_places
@@ -1219,6 +1380,12 @@ zabbix_export:
                     - type: INTEGER
                       name: decimal_size
                       value: '25'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
                     - type: ITEM
                       name: itemid.0
                       value:
@@ -1226,9 +1393,12 @@ zabbix_export:
                         key: splunk.enterprise.server.info.version
                     - type: INTEGER
                       name: show.0
-                      value: '2'
+                      value: '1'
                     - type: INTEGER
                       name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
                       value: '3'
                     - type: INTEGER
                       name: time_h_pos
@@ -1276,85 +1446,131 @@ zabbix_export:
                     - type: INTEGER
                       name: value_size
                       value: '75'
-                - type: topitems
-                  name: 'Splunkd Health'
+                - type: honeycomb
+                  name: 'Splunkd Health Status'
                   'y': '4'
                   width: '19'
                   height: '4'
                   fields:
-                    - type: INTEGER
-                      name: columns.0.display_value_as
-                      value: '2'
                     - type: STRING
-                      name: columns.0.highlights.0.color
-                      value: 0EC9AC
-                    - type: STRING
-                      name: columns.0.highlights.0.pattern
-                      value: green
-                    - type: STRING
-                      name: columns.0.highlights.1.color
-                      value: FF465C
-                    - type: STRING
-                      name: columns.0.highlights.1.pattern
-                      value: red
-                    - type: STRING
-                      name: columns.0.highlights.2.color
-                      value: FFD54F
-                    - type: STRING
-                      name: columns.0.highlights.2.pattern
-                      value: yellow
-                    - type: STRING
-                      name: columns.0.items.0
+                      name: items.0
                       value: 'Splunk ES Splunkd Health *'
                     - type: INTEGER
-                      name: columns.0.item_tags.0.operator
+                      name: item_tags.0.operator
                       value: '2'
                     - type: STRING
-                      name: columns.0.item_tags.0.tag
+                      name: item_tags.0.tag
                       value: Application
                     - type: STRING
-                      name: columns.0.item_tags.0.value
+                      name: item_tags.0.value
                       value: 'Zabbix raw'
+                    - type: STRING
+                      name: primary_label
+                      value: '{{ITEM.NAME}.regrepl("Splunk ES Splunkd Health","")}'
                     - type: INTEGER
-                      name: item_ordering_limit
-                      value: '20'
-                    - type: INTEGER
-                      name: item_ordering_order_by
-                      value: '2'
-                    - type: INTEGER
-                      name: layout
+                      name: primary_label_bold
                       value: '1'
+                    - type: STRING
+                      name: reference
+                      value: QJVXQ
                     - type: INTEGER
-                      name: problems
+                      name: secondary_label_decimal_places
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 3BC97D
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: FCCB1D
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.2.threshold
                       value: '2'
+                - type: svggraph
+                  name: 'Splunk Health Over Time'
+                  'y': '8'
+                  width: '36'
+                  height: '3'
+                  fields:
                     - type: INTEGER
-                      name: rf_rate
-                      value: '120'
+                      name: ds.0.color_palette
+                      value: '2'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'Splunk ES Splunkd Overall Health'
+                    - type: STRING
+                      name: lefty_max
+                      value: '3'
+                    - type: STRING
+                      name: lefty_min
+                      value: '0'
+                    - type: STRING
+                      name: reference
+                      value: QBYCX
                     - type: INTEGER
-                      name: show_column_header
+                      name: righty
                       value: '0'
                 - type: item
-                  name: Architecture
+                  name: 'Splunkd Overall Health'
                   x: '9'
                   width: '10'
+                  hide_header: 'YES'
                   fields:
                     - type: INTEGER
                       name: decimal_places
-                      value: '1'
+                      value: '0'
                     - type: INTEGER
                       name: decimal_size
                       value: '25'
+                    - type: STRING
+                      name: description
+                      value: '{{ITEM.NAME}.regrepl("Splunk ES","")}'
+                    - type: INTEGER
+                      name: desc_bold
+                      value: '1'
+                    - type: INTEGER
+                      name: desc_v_pos
+                      value: '0'
                     - type: ITEM
                       name: itemid.0
                       value:
                         host: 'Template Splunk Enterprise by HTTPS'
-                        key: splunk.enterprise.server.info.cpu_arch
+                        key: splunk.enterprise.server.health.splunkd.details.health
                     - type: INTEGER
                       name: show.0
-                      value: '2'
+                      value: '1'
                     - type: INTEGER
                       name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
                       value: '3'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 3BC97D
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: FCCB1D
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '1'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '2'
                     - type: INTEGER
                       name: time_h_pos
                       value: '2'
@@ -1364,9 +1580,6 @@ zabbix_export:
                     - type: INTEGER
                       name: time_v_pos
                       value: '2'
-                    - type: INTEGER
-                      name: value_size
-                      value: '65'
                 - type: item
                   name: 'Lic. Quota Peers Used'
                   x: '19'
@@ -1514,6 +1727,31 @@ zabbix_export:
                     - type: INTEGER
                       name: th_show_labels
                       value: '1'
+                - type: svggraph
+                  name: 'Splunk Health Over Time By Service'
+                  x: '36'
+                  'y': '8'
+                  width: '36'
+                  height: '3'
+                  fields:
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: '2'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'Splunk ES Splunkd Health *'
+                    - type: STRING
+                      name: lefty_max
+                      value: '3'
+                    - type: STRING
+                      name: lefty_min
+                      value: '0'
+                    - type: STRING
+                      name: reference
+                      value: BYEOU
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
                 - type: item
                   name: 'Management Port'
                   x: '45'
@@ -1734,6 +1972,15 @@ zabbix_export:
                       name: value_size
                       value: '60'
       valuemaps:
+        - uuid: eb263912a9a04d30a8bf66cb202ce543
+          name: 'Health Status'
+          mappings:
+            - value: '0'
+              newvalue: Green
+            - value: '1'
+              newvalue: Yellow
+            - value: '2'
+              newvalue: Red
         - uuid: a672078c896f46f794bd07b56cb758c8
           name: True-False
           mappings:
