@@ -4,6 +4,8 @@ This repository provides a Zabbix template to monitor **Splunk Enterprise** usin
 
 ![Dashboard](images/splunk_enterprise_dashboard.png)
 
+![Dashboard](images/splunk_enterprise_dashboard_yellow.png)
+
 ---
 
 ## 🧩 Template Overview
