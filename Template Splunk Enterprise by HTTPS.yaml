@@ -593,6 +593,46 @@ zabbix_export:
               url_name: 'Splunk API Server Info'
               url: 'https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
               priority: HIGH
+        - uuid: 5b7a177d24de47b29a762f28c8d93902
+          name: 'Splunk ES Startup time'
+          type: DEPENDENT
+          key: splunk.enterprise.server.info.startup_time
+          history: 30d
+          units: unixtime
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.startup_time
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 10m
+          master_item:
+            key: splunk.enterprise.server.info.raw
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
+          triggers:
+            - uuid: ad8937ce8f084570ac843f8d413f4ab4
+              expression: '( now() - last(/Template Splunk Enterprise by HTTPS/splunk.enterprise.server.info.startup_time)) < 10m'
+              name: 'Splunk Service has been restarted ( uptime < 10m )'
+              opdata: '{ITEM.LASTVALUE}'
+              priority: WARNING
+        - uuid: 2fa88885e4bf43d695ae64d2757233f9
+          name: 'Splunk ES Uptime'
+          type: CALCULATED
+          key: splunk.enterprise.server.info.uptime
+          history: 30d
+          units: uptime
+          params: 'now() - last(//splunk.enterprise.server.info.startup_time)'
+          description: 'Check https://help.splunk.com/en/splunk-enterprise/rest-api-reference/10.0/introspection-endpoints/introspection-endpoint-descriptions#fa5a47d5_4cfd_478d_a3de_7d2f09135c86--en__server.2Finfo'
+          tags:
+            - tag: Application
+              value: 'Splunk Enterprise'
+            - tag: Application
+              value: 'Splunk Enterprise Server Info'
         - uuid: 734336e4b0cd4fc2a2fc09554738381a
           name: 'Splunk ES Version'
           type: DEPENDENT
@@ -1370,7 +1410,41 @@ zabbix_export:
           pages:
             - widgets:
                 - type: item
+                  name: 'Splunk Uptime'
+                  width: '19'
+                  fields:
+                    - type: INTEGER
+                      name: decimal_places
+                      value: '1'
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '25'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'Template Splunk Enterprise by HTTPS'
+                        key: splunk.enterprise.server.info.uptime
+                    - type: INTEGER
+                      name: show.0
+                      value: '2'
+                    - type: INTEGER
+                      name: show.1
+                      value: '3'
+                    - type: INTEGER
+                      name: time_h_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: time_size
+                      value: '10'
+                    - type: INTEGER
+                      name: time_v_pos
+                      value: '2'
+                    - type: INTEGER
+                      name: value_size
+                      value: '75'
+                - type: item
                   name: 'Splunk Version'
+                  'y': '2'
                   width: '9'
                   hide_header: 'YES'
                   fields:
@@ -1412,40 +1486,6 @@ zabbix_export:
                     - type: INTEGER
                       name: value_size
                       value: '65'
-                - type: item
-                  name: 'Splunk Build'
-                  'y': '2'
-                  width: '19'
-                  fields:
-                    - type: INTEGER
-                      name: decimal_places
-                      value: '1'
-                    - type: INTEGER
-                      name: decimal_size
-                      value: '25'
-                    - type: ITEM
-                      name: itemid.0
-                      value:
-                        host: 'Template Splunk Enterprise by HTTPS'
-                        key: splunk.enterprise.server.info.version_build
-                    - type: INTEGER
-                      name: show.0
-                      value: '2'
-                    - type: INTEGER
-                      name: show.1
-                      value: '3'
-                    - type: INTEGER
-                      name: time_h_pos
-                      value: '2'
-                    - type: INTEGER
-                      name: time_size
-                      value: '10'
-                    - type: INTEGER
-                      name: time_v_pos
-                      value: '2'
-                    - type: INTEGER
-                      name: value_size
-                      value: '75'
                 - type: honeycomb
                   name: 'Splunkd Health Status'
                   'y': '4'
@@ -1521,6 +1561,7 @@ zabbix_export:
                 - type: item
                   name: 'Splunkd Overall Health'
                   x: '9'
+                  'y': '2'
                   width: '10'
                   hide_header: 'YES'
                   fields:
